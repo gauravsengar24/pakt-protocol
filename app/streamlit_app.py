@@ -91,12 +91,13 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
         def log(role: str, text: str):
             msgs.append(AgentMessage(role=role, content=text))
 
-        log("system", f"🤖 **PAKT Protocol** — AI Agent Pact Engine on Kaspa Testnet-12")
-        log("system", f"🔐 **AI Identity Crisis**: These agents have no bank account, no credit card — they negotiate and settle directly on-chain.")
+        log("system", f"🤖 **PAKT Protocol** — Decentralized AI Orchestrator on Kaspa Testnet-12")
+        log("system", f"🛑 **The Closed-Loop AI Bottleneck**: These agents have no bank, no credit card, no corporate entity. They negotiate and settle directly on Kaspa — no Big Tech walled garden required.")
         log("system", f"• Buyer Agent: `{wallets.buyer.address[:20]}...`")
         log("system", f"• Seller Agent: `{wallets.seller.address[:20]}...`")
 
         request = "Generate a comprehensive market analysis report for Kaspa ecosystem Q3 2026"
+        scenario_tag = {"happy": "on-time delivery", "dispute": "hash mismatch dispute", "timeout": "seller timeout"}[scenario]
         pact = pact_mgr.create()
         pact.buyer_address = wallets.buyer.address
         pact.buyer_pubkey = wallets.buyer.pubkey_hex or ""
@@ -115,36 +116,37 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
             log("system", "❌ Negotiation failed")
             return msgs, None
 
-        log("system", f"✅ **Deal agreed:** {pact.terms.price_sompi / 100_000_000:.2f} KAS for a market analysis report")
-        log("system", f"📜 **Covenant condition**: Seller must deliver content matching an agreed SHA-256 hash (set at delivery)")
+        log("system", f"✅ **Deal agreed:** {pact.terms.price_sompi / 100_000_000:.2f} KAS for compute output")
+        log("system", f"📜 **Covenant condition**: Seller must deliver output matching a cryptographic commitment — no bank, no Stripe, no middleman.")
 
         # Covenant
         pact.funding_txid = f"sim_fund_{pact.id[:8]}"
         pact.covenant_address = f"kaspatest:pakt_{pact.id[:16]}"
         pact.fund(pact.funding_txid, pact.covenant_address)
         pact.lock(42000)
-        log("system", f"🔗 **SilverScript Covenant funded** — {pact.terms.price_sompi / 100_000_000:.2f} KAS locked on Kaspa DAG")
+        log("system", f"🔗 **SilverScript Covenant funded** — {pact.terms.price_sompi / 100_000_000:.2f} KAS locked. Neither party can steal — Kaspa DAG enforces the delivery condition.")
         log("system", f"   Covenant address: `{pact.covenant_address[:24]}...`")
         log("system", f"   Funding TX: `{pact.funding_txid[:20]}...`")
 
         if scenario == "timeout":
             pact.expire()
             pact.refund(f"sim_refund_{pact.id[:8]}")
-            log("system", "⏰ **Timeout** — Seller never delivered (DAA score exceeded threshold)")
-            log("system", f"🛡️ **Covenant self-destructs** — buyer reclaims {pact.terms.price_sompi / 100_000_000:.2f} KAS")
+            log("system", "⏰ **Timeout** — DAA score exceeded threshold. Seller agent never delivered.")
+            log("system", f"🛡️ **Covenant self-destructs** — {pact.terms.price_sompi / 100_000_000:.2f} KAS automatically refunded to buyer. No legal system, no chargebacks.")
             log("system", f"   Refund TX: `{pact.refund_txid[:20]}...`")
             return msgs, pact
 
         content = await seller.generate_content(pact)
-        log("seller", f"📄 **Content delivered** SHA256: `{pact.delivery_hash[:20]}...`")
+        log("seller", f"📄 **Output delivered** — SHA256: `{pact.delivery_hash[:20]}...`")
+        log("system", "🔍 **Buyer Agent verifying cryptographic commitment against on-chain covenant...**")
 
         if scenario == "dispute":
             pact.verify(False, reason="Content hash mismatch")
-            log("buyer", "❌ **Verification failed** — delivered content hash does not match covenant commitment")
-            log("system", "⚖️ **Escalating to Arbiter Agent** — independent AI reads on-chain evidence and votes")
+            log("buyer", "❌ **Verification failed** — output hash does not match covenant commitment")
+            log("system", "⚖️ **Escalating to Arbiter Agent** — independent AI reads on-chain evidence and votes on fund distribution")
             share, _ = await arbiter.resolve_dispute(pact, "Hash mismatch", "Content generated correctly")
             pact.arbitrate(f"sim_arb_{pact.id[:8]}", share)
-            log("arbitrator", f"⚖️ **Arbitration decision**: {share*100:.0f}% of locked funds → seller ({100-share*100:.0f}% → buyer)")
+            log("arbitrator", f"⚖️ **Arbitration ruling**: {share*100:.0f}% → seller, {100-share*100:.0f}% → buyer")
             log("system", f"✅ **Arbitrated settlement** executed on Kaspa DAG. TX: `{pact.claim_txid[:20]}...`")
             return msgs, pact
 
@@ -154,8 +156,8 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
             pact.verify(True)
             pact.settle(f"sim_settle_{pact.id[:8]}")
             amount = pact.terms.price_sompi / 100_000_000
-            log("buyer", f"✅ **Content verified** — SHA256 matches covenant commitment")
-            log("system", f"⚡ **INSTANT SETTLEMENT**: {amount:.2f} KAS released to seller (Kaspa settles in 1 sec)")
+            log("buyer", f"✅ **Output verified** — SHA256 matches on-chain covenant commitment")
+            log("system", f"⚡ **INSTANT SETTLEMENT**: {amount:.2f} KAS released to seller agent — Kaspa settles in 1 second")
             log("system", f"   Settlement TX: `{pact.claim_txid[:20]}...`")
         else:
             pact.verify(False)
@@ -176,11 +178,15 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style="font-size:0.75em;color:#78788a;margin-bottom:8px;padding:8px;border-radius:8px;
-                background:rgba(96,205,255,0.06);border:1px solid rgba(96,205,255,0.1);">
-        <strong style="color:#f0f0f5;">📊 AI Data Marketplace</strong><br>
-        Hedge fund Buyer Agent discovers a Research Agent, negotiates 30 KAS for a market report,
-        locks funds in a covenant, and settles in 1 second.
+    <div style="font-size:0.7em;color:#78788a;margin-bottom:8px;padding:8px;border-radius:8px;
+                background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);">
+        <strong style="color:#f0f0f5;">🚁 DePIN — Drone Charging</strong><br>
+        A delivery drone autonomously hires a charging station. KAS locked in covenant → power delivered → sensor verified → 1 sec settlement.
+    </div>
+    <div style="font-size:0.7em;color:#78788a;margin-bottom:8px;padding:8px;border-radius:8px;
+                background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.1);">
+        <strong style="color:#f0f0f5;">🏗️ Multi-Agent Software Factory</strong><br>
+        A PM agent splits 50 tasks. Developer agents compete. Code passes automated tests → covenant releases payout instantly.
     </div>
     """, unsafe_allow_html=True)
 
@@ -189,9 +195,9 @@ with st.sidebar:
     scenario = st.selectbox(
         "Demo Scenario",
         ["happy", "dispute", "timeout"],
-        format_func=lambda x: {"happy": "✅ Happy Path — On-Time Delivery",
-                              "dispute": "⚖️ Dispute — Arbiter Steps In",
-                              "timeout": "⏰ Timeout — Buyer Refund"}[x],
+        format_func=lambda x: {"happy": "✅ Happy Path — Deliver & Settle",
+                              "dispute": "⚖️ Dispute — Arbiter Rules",
+                              "timeout": "⏰ Timeout — Auto-Refund"}[x],
         key="scenario_sel",
     )
 
@@ -221,43 +227,43 @@ st.markdown("""
         🤝 <span style="color:#60cdff;">PAKT</span> Protocol
     </h1>
     <p style="color:#78788a;margin:4px 0 0 0;font-size:0.85em;">
-        Autonomous Escrow · SilverScript Covenants · Kaspa DAG
+        Decentralized AI Compute & Inference Orchestrator · Kaspa DAG Covenants
     </p>
 </div>
 
-<div class="glass-card" style="margin-bottom:16px;padding:16px 20px;">
+<div class="glass-card" style="margin-bottom:12px;padding:16px 20px;">
     <div style="display:flex;align-items:flex-start;gap:14px;">
-        <div style="font-size:2em;line-height:1;">⚠️</div>
+        <div style="font-size:2em;line-height:1;">🛑</div>
         <div>
             <div style="color:#f0f0f5;font-weight:600;font-size:0.95em;">
-                The AI Identity Crisis
+                The Closed-Loop AI Bottleneck
             </div>
             <div style="color:#78788a;font-size:0.8em;margin-top:4px;">
-                AI agents cannot open bank accounts, sign corporate contracts, or hold credit cards.
-                Give an agent your card and it can overspend, leak data, or get scammed —
-                <em>traditional payment rails are built for humans, not machines.</em>
+                Small developers create incredible AI models — but cannot monetize them without a corporate entity,
+                bank account, or Stripe integration. Big Tech controls the walled gardens.
+                <em>There is no open, decentralized market for AI capabilities.</em>
             </div>
         </div>
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
     <div class="glass-card" style="padding:12px;text-align:center;">
-        <div style="font-size:0.75em;color:#78788a;">1. TRUSTLESS NEGOTIATION</div>
+        <div style="font-size:0.75em;color:#78788a;">1. AUTONOMOUS NEGOTIATION</div>
         <div style="font-size:0.7em;color:#f0f0f5;margin-top:4px;">
-            AI agents discover, quote, and agree on-chain — cryptographic conditions lock the terms.
+            AI agents discover each other, quote prices, and agree to terms — all without humans, banks, or legal entities.
         </div>
     </div>
     <div class="glass-card" style="padding:12px;text-align:center;">
         <div style="font-size:0.75em;color:#78788a;">2. COVENANT ESCROW</div>
         <div style="font-size:0.7em;color:#f0f0f5;margin-top:4px;">
-            Buyer locks KAS into a SilverScript covenant. Neither party can steal — the protocol enforces delivery.
+            Buyer locks KAS into a SilverScript covenant. Funds cannot be stolen — the Kaspa DAG enforces the delivery condition.
         </div>
     </div>
     <div class="glass-card" style="padding:12px;text-align:center;">
         <div style="font-size:0.75em;color:#78788a;">3. INSTANT SETTLEMENT</div>
         <div style="font-size:0.7em;color:#f0f0f5;margin-top:4px;">
-            Kaspa settles in 1 second. Data verified → funds released. Timeout or dispute → refund or arbitrate.
+            Kaspa settles in 1 second — the only ledger fast enough for autonomous machine micro-payments at scale.
         </div>
     </div>
 </div>
@@ -442,12 +448,35 @@ with col_info:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ── Footer ───────────────────────────────────────────────────────────────────
+# ── Kaspa Flex Footer ────────────────────────────────────────────────────────
 
 st.markdown("""
-<div style="text-align:center;color:#78788a;font-size:0.75em;padding:20px 0;">
-    PAKT Protocol v0.1 · Built on Kaspa Testnet-12 · 
-    <a href="https://github.com/gauravsengar24/pakt-protocol" 
-       style="color:#60cdff;text-decoration:none;">GitHub</a>
+<div style="margin-top:24px;padding:16px 20px;border-radius:18px;
+            background:linear-gradient(135deg,rgba(255,255,255,0.03),rgba(5,5,8,0.5));
+            border:1px solid rgba(255,255,255,0.06);">
+    <div style="text-align:center;margin-bottom:12px;">
+        <span style="color:#f0f0f5;font-weight:600;font-size:0.9em;">⚡ The Kaspa Flex — Why Kaspa Wins for AI Agents</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:0.75em;">
+        <div style="padding:10px;border-radius:12px;background:rgba(239,68,68,0.06);
+                    border:1px solid rgba(239,68,68,0.12);text-align:center;">
+            <div style="color:#ef4444;font-weight:600;">Ethereum</div>
+            <div style="color:#78788a;margin-top:4px;">$15 gas · 12 sec finality<br>Micro-payments cost more in fees than value<br><span style="color:#ef4444;">✗ Unusable for agent micro-transactions</span></div>
+        </div>
+        <div style="padding:10px;border-radius:12px;background:rgba(234,179,8,0.06);
+                    border:1px solid rgba(234,179,8,0.12);text-align:center;">
+            <div style="color:#eab308;font-weight:600;">Solana</div>
+            <div style="color:#78788a;margin-top:4px;">Fast, but account-based model<br>State lock contention with 1000s of parallel agents<br><span style="color:#eab308;">✗ State contention at scale</span></div>
+        </div>
+        <div style="padding:10px;border-radius:12px;background:rgba(34,197,94,0.06);
+                    border:1px solid rgba(34,197,94,0.12);text-align:center;">
+            <div style="color:#22c55e;font-weight:600;">Kaspa (PAKT)</div>
+            <div style="color:#78788a;margin-top:4px;">1 sec finality · blockDAG<br>Parallel UTXO — no state lock contention<br><span style="color:#22c55e;">✓ Only ledger fast enough for machine coordination</span></div>
+        </div>
+    </div>
+    <div style="text-align:center;margin-top:12px;color:#78788a;font-size:0.7em;">
+        PAKT Protocol v0.1 · Built on <a href="https://kaspa.org" style="color:#60cdff;text-decoration:none;">Kaspa</a> Testnet-12 · 
+        <a href="https://github.com/gauravsengar24/pakt-protocol" style="color:#60cdff;text-decoration:none;">GitHub</a>
+    </div>
 </div>
 """, unsafe_allow_html=True)
