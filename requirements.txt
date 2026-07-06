@@ -1,0 +1,22 @@
+# PAKT Protocol — Core Dependencies
+# Target: Python 3.10+
+
+# Kaspa Python SDK (v2.0.1+, Testnet-12 compatible)
+kaspa>=2.0.1
+
+# LLM Integration (optional — for LLM-powered negotiation)
+# openai>=1.0.0
+# langchain>=0.3.0
+
+# Terminal UI (demo display)
+rich>=13.0.0
+
+# Cryptographic utilities (standard library fallback for hashing)
+# cryptography>=41.0.0  # optional: wallet encryption
+
+# Development & Testing
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+
+# Documentation
+# mkdocs>=1.5.0
