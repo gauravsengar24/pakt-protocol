@@ -116,7 +116,7 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
             return msgs, None
 
         log("system", f"✅ **Deal agreed:** {pact.terms.price_sompi / 100_000_000:.2f} KAS for a market analysis report")
-        log("system", f"📜 **Covenant condition**: Seller must deliver content matching SHA-256 `{pact.delivery_hash[:20]}...`")
+        log("system", f"📜 **Covenant condition**: Seller must deliver content matching an agreed SHA-256 hash (set at delivery)")
 
         # Covenant
         pact.funding_txid = f"sim_fund_{pact.id[:8]}"
