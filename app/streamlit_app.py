@@ -91,9 +91,10 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
         def log(role: str, text: str):
             msgs.append(AgentMessage(role=role, content=text))
 
-        log("system", f"🤖 PAKT Protocol initializing on Kaspa Testnet-12")
-        log("system", f"• Buyer: `{wallets.buyer.address[:20]}...`")
-        log("system", f"• Seller: `{wallets.seller.address[:20]}...`")
+        log("system", f"🤖 **PAKT Protocol** — AI Agent Pact Engine on Kaspa Testnet-12")
+        log("system", f"🔐 **AI Identity Crisis**: These agents have no bank account, no credit card — they negotiate and settle directly on-chain.")
+        log("system", f"• Buyer Agent: `{wallets.buyer.address[:20]}...`")
+        log("system", f"• Seller Agent: `{wallets.seller.address[:20]}...`")
 
         request = "Generate a comprehensive market analysis report for Kaspa ecosystem Q3 2026"
         pact = pact_mgr.create()
@@ -114,22 +115,24 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
             log("system", "❌ Negotiation failed")
             return msgs, None
 
-        log("system", f"✅ **Deal agreed:** {pact.terms.price_sompi / 100_000_000:.2f} KAS")
+        log("system", f"✅ **Deal agreed:** {pact.terms.price_sompi / 100_000_000:.2f} KAS for a market analysis report")
+        log("system", f"📜 **Covenant condition**: Seller must deliver content matching SHA-256 `{pact.delivery_hash[:20]}...`")
 
         # Covenant
         pact.funding_txid = f"sim_fund_{pact.id[:8]}"
         pact.covenant_address = f"kaspatest:pakt_{pact.id[:16]}"
         pact.fund(pact.funding_txid, pact.covenant_address)
         pact.lock(42000)
-        log("system", f"🔗 **Covenant funded** → `{pact.covenant_address[:24]}...`")
-        log("system", f"📦 Funding TX: `{pact.funding_txid[:20]}...`")
+        log("system", f"🔗 **SilverScript Covenant funded** — {pact.terms.price_sompi / 100_000_000:.2f} KAS locked on Kaspa DAG")
+        log("system", f"   Covenant address: `{pact.covenant_address[:24]}...`")
+        log("system", f"   Funding TX: `{pact.funding_txid[:20]}...`")
 
         if scenario == "timeout":
             pact.expire()
             pact.refund(f"sim_refund_{pact.id[:8]}")
-            log("system", "⏰ **Timeout** — DAA score exceeded threshold")
-            log("system", f"💰 **Refund** → buyer reclaims {pact.terms.price_sompi / 100_000_000:.2f} KAS")
-            log("system", f"📦 Refund TX: `{pact.refund_txid[:20]}...`")
+            log("system", "⏰ **Timeout** — Seller never delivered (DAA score exceeded threshold)")
+            log("system", f"🛡️ **Covenant self-destructs** — buyer reclaims {pact.terms.price_sompi / 100_000_000:.2f} KAS")
+            log("system", f"   Refund TX: `{pact.refund_txid[:20]}...`")
             return msgs, pact
 
         content = await seller.generate_content(pact)
@@ -137,12 +140,12 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
 
         if scenario == "dispute":
             pact.verify(False, reason="Content hash mismatch")
-            log("buyer", "❌ **Verification failed** — hash does not match covenant commitment")
-            log("system", "⚖️ **Escalating to arbitrator...**")
+            log("buyer", "❌ **Verification failed** — delivered content hash does not match covenant commitment")
+            log("system", "⚖️ **Escalating to Arbiter Agent** — independent AI reads on-chain evidence and votes")
             share, _ = await arbiter.resolve_dispute(pact, "Hash mismatch", "Content generated correctly")
             pact.arbitrate(f"sim_arb_{pact.id[:8]}", share)
-            log("arbitrator", f"⚖️ **Resolution**: {share*100:.0f}% of locked funds → seller")
-            log("system", f"✅ **Arbitrated settlement** TX: `{pact.claim_txid[:20]}...`")
+            log("arbitrator", f"⚖️ **Arbitration decision**: {share*100:.0f}% of locked funds → seller ({100-share*100:.0f}% → buyer)")
+            log("system", f"✅ **Arbitrated settlement** executed on Kaspa DAG. TX: `{pact.claim_txid[:20]}...`")
             return msgs, pact
 
         # Happy path
@@ -151,9 +154,9 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
             pact.verify(True)
             pact.settle(f"sim_settle_{pact.id[:8]}")
             amount = pact.terms.price_sompi / 100_000_000
-            log("buyer", f"✅ **Content verified** — SHA256 matches commitment")
-            log("system", f"💰 **PAYMENT RELEASED**: {amount:.2f} KAS → seller")
-            log("system", f"📦 Settlement TX: `{pact.claim_txid[:20]}...`")
+            log("buyer", f"✅ **Content verified** — SHA256 matches covenant commitment")
+            log("system", f"⚡ **INSTANT SETTLEMENT**: {amount:.2f} KAS released to seller (Kaspa settles in 1 sec)")
+            log("system", f"   Settlement TX: `{pact.claim_txid[:20]}...`")
         else:
             pact.verify(False)
 
@@ -166,20 +169,29 @@ def run_demo_sync(scenario: str) -> tuple[list[AgentMessage], Pact | None]:
 
 with st.sidebar:
     st.markdown("""
-    <div style="text-align:center;margin-bottom:20px;">
+    <div style="text-align:center;margin-bottom:12px;">
         <h2 style="color:#60cdff;margin:0;">🤝 PAKT</h2>
-        <p style="color:#78788a;font-size:0.8em;margin:0;">Protocol v0.1</p>
+        <p style="color:#78788a;font-size:0.75em;margin:0;">Protocol v0.1</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="font-size:0.75em;color:#78788a;margin-bottom:8px;padding:8px;border-radius:8px;
+                background:rgba(96,205,255,0.06);border:1px solid rgba(96,205,255,0.1);">
+        <strong style="color:#f0f0f5;">📊 AI Data Marketplace</strong><br>
+        Hedge fund Buyer Agent discovers a Research Agent, negotiates 30 KAS for a market report,
+        locks funds in a covenant, and settles in 1 second.
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("---")
 
     scenario = st.selectbox(
-        "Scenario",
+        "Demo Scenario",
         ["happy", "dispute", "timeout"],
-        format_func=lambda x: {"happy": "✅ Happy Path — Settle",
-                              "dispute": "⚖️ Dispute — Arbitrate",
-                              "timeout": "⏰ Timeout — Refund"}[x],
+        format_func=lambda x: {"happy": "✅ Happy Path — On-Time Delivery",
+                              "dispute": "⚖️ Dispute — Arbiter Steps In",
+                              "timeout": "⏰ Timeout — Buyer Refund"}[x],
         key="scenario_sel",
     )
 
@@ -201,16 +213,53 @@ with st.sidebar:
                 unsafe_allow_html=True)
 
 
-# ── Main Panel ───────────────────────────────────────────────────────────────
+# ── Main Panel: Hero + Narrative ─────────────────────────────────────────────
 
 st.markdown("""
-<div style="text-align:center;margin-bottom:24px;">
+<div style="text-align:center;margin-bottom:8px;">
     <h1 style="color:#f0f0f5;margin:0;font-size:2.2em;">
         🤝 <span style="color:#60cdff;">PAKT</span> Protocol
     </h1>
-    <p style="color:#78788a;margin:4px 0 0 0;">
-        AI Agent Pact Engine · Kaspa Covenant Layer
+    <p style="color:#78788a;margin:4px 0 0 0;font-size:0.85em;">
+        Autonomous Escrow · SilverScript Covenants · Kaspa DAG
     </p>
+</div>
+
+<div class="glass-card" style="margin-bottom:16px;padding:16px 20px;">
+    <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="font-size:2em;line-height:1;">⚠️</div>
+        <div>
+            <div style="color:#f0f0f5;font-weight:600;font-size:0.95em;">
+                The AI Identity Crisis
+            </div>
+            <div style="color:#78788a;font-size:0.8em;margin-top:4px;">
+                AI agents cannot open bank accounts, sign corporate contracts, or hold credit cards.
+                Give an agent your card and it can overspend, leak data, or get scammed —
+                <em>traditional payment rails are built for humans, not machines.</em>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+    <div class="glass-card" style="padding:12px;text-align:center;">
+        <div style="font-size:0.75em;color:#78788a;">1. TRUSTLESS NEGOTIATION</div>
+        <div style="font-size:0.7em;color:#f0f0f5;margin-top:4px;">
+            AI agents discover, quote, and agree on-chain — cryptographic conditions lock the terms.
+        </div>
+    </div>
+    <div class="glass-card" style="padding:12px;text-align:center;">
+        <div style="font-size:0.75em;color:#78788a;">2. COVENANT ESCROW</div>
+        <div style="font-size:0.7em;color:#f0f0f5;margin-top:4px;">
+            Buyer locks KAS into a SilverScript covenant. Neither party can steal — the protocol enforces delivery.
+        </div>
+    </div>
+    <div class="glass-card" style="padding:12px;text-align:center;">
+        <div style="font-size:0.75em;color:#78788a;">3. INSTANT SETTLEMENT</div>
+        <div style="font-size:0.7em;color:#f0f0f5;margin-top:4px;">
+            Kaspa settles in 1 second. Data verified → funds released. Timeout or dispute → refund or arbitrate.
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -295,7 +344,7 @@ col_chat, col_info = st.columns([3, 2])
 
 with col_chat:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown("### 💬 Agent Conversation")
+    st.markdown("### 💬 Agent Conversation — AI-to-AI Negotiation Log")
 
     chat = st.container(height=440)
     with chat:
@@ -309,7 +358,7 @@ with col_chat:
 
 with col_info:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown("### 📋 Pact Details")
+    st.markdown("### 📋 On-Chain Covenant Details")
 
     if pact:
         for label, val in [
@@ -332,15 +381,29 @@ with col_info:
             )
 
         st.markdown("### 🔄 Lifecycle")
-        states = ["draft", "negotiating", "agreed", "funding", "locked",
-                  "delivered", "verified", "settled"]
-        idx = next((i for i, s in enumerate(states) if s == pact.state.value), -1)
+        base_states = ["draft", "negotiating", "agreed", "funded", "locked",
+                      "delivered", "verified"]
+        terminal_states = {
+            "settled": "settled",
+            "refunded": "refunded",
+            "dispute": "dispute",
+            "settled (arbitrated)": "arbitrated",
+        }
+        state_val = pact.state.value
+        if state_val in terminal_states:
+            states = base_states + [terminal_states[state_val]]
+        else:
+            states = base_states
+        idx = next((i for i, s in enumerate(states) if s in (state_val, state_val.replace(" ", "_"))), -1)
+        colors = {"settled": "#22c55e", "refunded": "#eab308",
+                  "dispute": "#ef4444", "arbitrated": "#a855f7"}
         cols = st.columns(len(states))
         for i, s in enumerate(states):
             done = i <= idx
+            dot_color = colors.get(s, "#22c55e") if done else "#1e1e2e"
             cols[i].markdown(
                 f'<div style="text-align:center;font-size:0.65em;">'
-                f'<span style="color:{"#22c55e" if done else "#1e1e2e"};">'
+                f'<span style="color:{dot_color};">'
                 f'{"●" if done else "○"}</span><br>'
                 f'<span style="color:#78788a;">{s[:4]}</span></div>',
                 unsafe_allow_html=True,
@@ -349,12 +412,28 @@ with col_info:
         if pact.state in (PactState.SETTLED, PactState.REFUNDED):
             st.markdown("---")
             amt = pact.terms.price_sompi / 100_000_000
+            is_settled = pact.state == PactState.SETTLED
+            color = "#22c55e" if is_settled else "#eab308"
+            label = "SETTLED — Payment released to seller" if is_settled else "REFUNDED — Funds returned to buyer"
             st.markdown(
                 f'<div style="text-align:center;padding:8px;'
-                f'background:rgba(34,197,94,0.1);border-radius:12px;">'
-                f'<span style="color:#22c55e;font-size:1.4em;font-weight:700;">'
+                f'background:rgba({"34,197,94" if is_settled else "234,179,8"},0.1);border-radius:12px;">'
+                f'<span style="color:{color};font-size:1.2em;font-weight:700;">'
                 f'{amt:.2f} KAS</span>'
-                f'<br><span style="color:#78788a;">settled via Kaspa covenant</span>'
+                f'<br><span style="color:#78788a;font-size:0.75em;">{label}</span>'
+                f'<br><span style="color:#78788a;font-size:0.7em;">via Kaspa SilverScript covenant · 1 sec settlement</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        elif pact and pact.state == PactState.DISPUTE:
+            st.markdown("---")
+            st.markdown(
+                f'<div style="text-align:center;padding:8px;'
+                f'background:rgba(168,85,247,0.1);border-radius:12px;">'
+                f'<span style="color:#a855f7;font-size:1em;font-weight:700;">'
+                f'Arbitration Complete</span>'
+                f'<br><span style="color:#78788a;font-size:0.7em;">'
+                f'Independent Arbiter Agent split locked funds per on-chain evidence</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
